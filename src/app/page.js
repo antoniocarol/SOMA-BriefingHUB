@@ -22,9 +22,7 @@ export default function Home() {
 
   // Estados dinâmicos do Step3
   const [metas, setMetas] = useState([""]);
-  const [valores, setValores] = useState([
-    { placeholder: "Ambição", value: "" },
-  ]);
+  const [valores, setValores] = useState([{ placeholder: "Ambição", value: "" }]);
   const [channels, setChannels] = useState([
     { name: "E-mail", checked: false },
     { name: "Site", checked: false },
@@ -97,7 +95,8 @@ export default function Home() {
     [errors]
   );
 
-  const handleSubmit = useCallback(() => {
+  const handleSubmit = useCallback(async () => {
+    // Validação do nome da empresa
     if (!formData.companyName || formData.companyName.trim() === "") {
       showNotification("error", "O nome da empresa é obrigatório.");
       setErrors((prev) => ({
@@ -108,6 +107,7 @@ export default function Home() {
       return;
     }
 
+    // Monta o payload com todos os dados necessários
     const payload = {
       ...formData,
       metas,
@@ -116,6 +116,21 @@ export default function Home() {
     };
 
     try {
+      // Chama o endpoint que processa e envia o e-mail
+      const response = await fetch("/api/send-email", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      // Se a resposta não for OK, exibe o erro retornado
+      if (!response.ok) {
+        const errorData = await response.json();
+        showNotification("error", errorData.message || "Erro ao enviar o formulário");
+        return;
+      }
+
+      // Se tudo ocorrer bem, mostra a tela de agradecimento e notifica o sucesso
       setIsSubmitted(true);
       showNotification("success", "Formulário enviado com sucesso!");
       console.log("Payload enviado:", payload);
@@ -128,10 +143,7 @@ export default function Home() {
   const handleNextStep = useCallback(() => {
     if (currentStep === 1) {
       if (!formData.companyName || formData.companyName.trim() === "") {
-        showNotification(
-          "error",
-          "Por favor, preencha o nome da empresa para continuar."
-        );
+        showNotification("error", "Por favor, preencha o nome da empresa para continuar.");
         setErrors((prev) => ({
           ...prev,
           companyName: "Por favor, preencha o nome da empresa.",
@@ -156,9 +168,7 @@ export default function Home() {
   const stepContentRef = useRef(null);
   useEffect(() => {
     if (stepContentRef.current) {
-      const firstInteractive = stepContentRef.current.querySelector(
-        "input, select, textarea, button"
-      );
+      const firstInteractive = stepContentRef.current.querySelector("input, select, textarea, button");
       if (firstInteractive) {
         firstInteractive.focus();
       }
@@ -183,9 +193,7 @@ export default function Home() {
           />
         );
       case 2:
-        return (
-          <Step2 formData={formData} handleInputChange={handleInputChange} />
-        );
+        return <Step2 formData={formData} handleInputChange={handleInputChange} />;
       case 3:
         return (
           <Step3
@@ -202,25 +210,15 @@ export default function Home() {
           />
         );
       case 4:
-        return (
-          <Step4 formData={formData} handleInputChange={handleInputChange} />
-        );
+        return <Step4 formData={formData} handleInputChange={handleInputChange} />;
       case 5:
-        return (
-          <Step5 formData={formData} handleInputChange={handleInputChange} />
-        );
+        return <Step5 formData={formData} handleInputChange={handleInputChange} />;
       case 6:
-        return (
-          <Step6 formData={formData} handleInputChange={handleInputChange} />
-        );
+        return <Step6 formData={formData} handleInputChange={handleInputChange} />;
       case 7:
-        return (
-          <Step7 formData={formData} handleInputChange={handleInputChange} />
-        );
+        return <Step7 formData={formData} handleInputChange={handleInputChange} />;
       case 8:
-        return (
-          <Step8 formData={formData} handleInputChange={handleInputChange} />
-        );
+        return <Step8 formData={formData} handleInputChange={handleInputChange} />;
       default:
         return null;
     }
@@ -248,12 +246,14 @@ export default function Home() {
   return (
     <>
       {notification && (
-        <Toast
-          notification={notification}
-          onClose={() => setNotification(null)}
-        />
+        <Toast notification={notification} onClose={() => setNotification(null)} />
       )}
-      <main
+
+      {/* Main animado */}
+      <motion.main
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.97 }}
+        transition={{ duration: 1, delay: 1.5 }}
         className="w-full max-w-6xl mx-auto flex flex-col md:flex-row bg-white shadow-xl rounded-2xl overflow-hidden transition-all duration-300 p-4 my-4"
         style={{
           minHeight: "80vh",
@@ -262,8 +262,11 @@ export default function Home() {
           height: "80%",
         }}
       >
-        {/* Lado Esquerdo – Imagem/Banner */}
-        <div
+        {/* Banner com animação slide-up */}
+        <motion.div
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.8, delay: 2.5 }}
           className="relative justify-center flex md:w-[100%] h-40 md:h-full mb-6 md:mb-0 responsivity_image"
           style={{
             background: "url(/images/banner.svg)",
@@ -273,7 +276,11 @@ export default function Home() {
             borderRadius: "14px",
           }}
         >
-          <div
+          {/* LetterLogo com animação subsequente */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 3.3 }}
             className="letterLogo"
             style={{
               background: "url(/images/somaLettersLogo.svg)",
@@ -281,19 +288,25 @@ export default function Home() {
               backgroundPosition: "center",
               backgroundRepeat: "no-repeat",
             }}
-          ></div>
-        </div>
+          ></motion.div>
+        </motion.div>
 
-        {/* Formulário */}
-        <div className="w-full md:w-[55%] flex justify-start overflow-hidden">
+        {/* Formulário com animação slide da esquerda pra direita */}
+        <motion.div
+          initial={{ x: -100, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          transition={{ duration: 0.5, delay: 3.6 }}
+          className="w-full md:w-[55%] flex justify-start overflow-hidden"
+        >
           <form className="w-full h-full flex flex-col justify-between px-2 md:px-8 py-4 md:py-6">
             {/* Indicadores de etapa */}
             <div className="flex items-center gap-2 mb-4">
               {Array.from({ length: stepsTotal }).map((_, idx) => (
                 <div
                   key={idx}
-                  className={`w-3 h-3 rounded-full ${idx + 1 === currentStep ? "bg-green-800" : "bg-gray-300"
-                    }`}
+                  className={`w-3 h-3 rounded-full ${
+                    idx + 1 === currentStep ? "bg-green-800" : "bg-gray-300"
+                  }`}
                 ></div>
               ))}
             </div>
@@ -319,26 +332,26 @@ export default function Home() {
                 type="button"
                 onClick={handlePrevStep}
                 className="
-      border 
-      border-green-500 
-      bg-transparent 
-      text-green-500 
-      py-3 
-      px-6 
-      text-lg 
-      font-medium 
-      rounded-md 
-      shadow-sm 
-      transition 
-      duration-300 
-      ease-in-out 
-      hover:bg-green-50 
-      focus:outline-none 
-      focus:ring-2 
-      focus:ring-green-400 
-      focus:ring-opacity-75
-      cursor-pointer
-    "
+                  border 
+                  border-green-500 
+                  bg-transparent 
+                  text-green-500 
+                  py-3 
+                  px-6 
+                  text-lg 
+                  font-medium 
+                  rounded-md 
+                  shadow-sm 
+                  transition 
+                  duration-300 
+                  ease-in-out 
+                  hover:bg-green-50 
+                  focus:outline-none 
+                  focus:ring-2 
+                  focus:ring-green-400 
+                  focus:ring-opacity-75
+                  cursor-pointer
+                "
                 disabled={currentStep === 1}
                 aria-label="Voltar"
               >
@@ -349,35 +362,33 @@ export default function Home() {
                   type="button"
                   onClick={handleNextStep}
                   className="
-      bg-green-500 
-      text-white 
-      py-3 
-      px-6 
-      text-lg 
-      font-medium 
-      rounded-md 
-      shadow-md 
-      transition 
-      duration-300 
-      ease-in-out 
-      hover:bg-green-600 
-      focus:outline-none 
-      focus:ring-2 
-      focus:ring-green-400 
-      focus:ring-opacity-75
-      cursor-pointer
-    "
-                  aria-label={
-                    currentStep === stepsTotal ? "Enviar" : "Continuar"
-                  }
+                    bg-green-500 
+                    text-white 
+                    py-3 
+                    px-6 
+                    text-lg 
+                    font-medium 
+                    rounded-md 
+                    shadow-md 
+                    transition 
+                    duration-300 
+                    ease-in-out 
+                    hover:bg-green-600 
+                    focus:outline-none 
+                    focus:ring-2 
+                    focus:ring-green-400 
+                    focus:ring-opacity-75
+                    cursor-pointer
+                  "
+                  aria-label={currentStep === stepsTotal ? "Enviar" : "Continuar"}
                 >
                   {currentStep === stepsTotal ? "Submit" : "Continue"}
                 </button>
               </div>
             </div>
           </form>
-        </div>
-      </main>
+        </motion.div>
+      </motion.main>
     </>
   );
 }
