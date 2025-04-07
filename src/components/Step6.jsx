@@ -12,24 +12,24 @@ export default function Step6({ formData, handleInputChange }) {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pl-1">
       <h2 className="text-xl font-semibold text-gray-800">Identidade Visual</h2>
       <div>
         <label className="block text-lg font-medium text-gray-700">
           Personalidade da Marca:
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {traits.map((trait) => (
-            <label key={trait} className="inline-flex items-center">
+            <label key={trait} className="flex items-center">
               <input
                 type="checkbox"
                 name={`trait-${trait}`}
                 checked={formData[`trait-${trait}`] || false}
                 onChange={handleInputChange}
-                className="h-5 w-5 accent-green-600 focus:ring-2 focus:ring-green-500 border border-gray-300 rounded mr-2 transition-colors"
+                className="h-5 w-5 accent-green-600 focus:ring-2 focus:ring-green-500 border border-gray-300 rounded transition-colors"
                 aria-label={trait}
               />
-              <span className="text-lg text-gray-800">{trait}</span>
+              <span className="ml-2 text-lg text-gray-800">{trait}</span>
             </label>
           ))}
         </div>

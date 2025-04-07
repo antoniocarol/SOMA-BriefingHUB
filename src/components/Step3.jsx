@@ -14,7 +14,7 @@ export default function Step3({
   handleToggleChannel,
 }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pl-1">
       <h2 className="text-xl font-semibold text-gray-800">Sobre o Negócio</h2>
       <div>
         <label htmlFor="founded" className="block text-lg font-medium text-gray-700">
@@ -204,18 +204,21 @@ export default function Step3({
         <label className="block text-lg font-medium text-gray-700">
           Canais de Comunicação da Empresa:
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
           {channels.map((channel, i) => (
-            <label key={channel.name} className="inline-flex items-center">
+            <label key={channel.name} className="flex items-center">
               <input
                 type="checkbox"
                 name={`channel-${channel.name}`}
                 checked={channel.checked}
-                onChange={() => handleToggleChannel(i)}
-                className="h-5 w-5 accent-green-600 focus:ring-2 focus:ring-green-500 border border-gray-300 rounded mr-2 transition-colors"
+                onChange={() => {
+                  console.log("Toggle channel:", channel.name);
+                  handleToggleChannel(i);
+                }}
+                className="cursor-pointer h-5 w-5 accent-green-600 focus:ring-2 focus:ring-green-500 border border-gray-300 rounded transition-colors"
                 aria-label={channel.name}
               />
-              <span className="text-lg text-gray-800">{channel.name}</span>
+              <span className="ml-2 text-lg text-gray-800">{channel.name}</span>
             </label>
           ))}
         </div>

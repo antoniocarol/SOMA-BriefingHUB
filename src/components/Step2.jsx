@@ -3,7 +3,7 @@ import React from "react";
 
 export default function Step2({ formData, handleInputChange }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pl-1">
       <h2 className="text-xl font-semibold text-gray-800">Sobre Você</h2>
       <div>
         <label htmlFor="role" className="block text-lg font-medium text-gray-700">

@@ -3,7 +3,7 @@ import React from "react";
 
 export default function Step5({ formData, handleInputChange }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pl-1">
       <h2 className="text-xl font-semibold text-gray-800">Público-Alvo</h2>
       <div className="space-y-2">
         <label className="block text-lg font-medium text-gray-700">

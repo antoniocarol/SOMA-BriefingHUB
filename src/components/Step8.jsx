@@ -3,7 +3,7 @@ import React from "react";
 
 export default function Step8({ formData, handleInputChange }) {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pl-1">
       <h2 className="text-xl font-semibold text-gray-800">Mapa Mental – Brand</h2>
       <div className="flex flex-col md:flex-row gap-6">
         {/* Lado Esquerdo – Identidade da Marca */}

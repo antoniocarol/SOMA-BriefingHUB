@@ -3,6 +3,7 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSwipeable } from "react-swipeable";
 
+import WelcomeScreen from "@/components/WelcomeScreen";
 import Step1 from "@/components/Step1";
 import Step2 from "@/components/Step2";
 import Step3 from "@/components/Step3";
@@ -15,6 +16,10 @@ import Toast from "@/components/Toast";
 import ThankYouScreen from "@/components/ThankYouScreen";
 
 export default function Home() {
+  // Estado para a tela de boas-vindas
+  const [showWelcome, setShowWelcome] = useState(true);
+
+  // Estados do formulário
   const [currentStep, setCurrentStep] = useState(1);
   const stepsTotal = 8;
   const [formData, setFormData] = useState({});
@@ -34,10 +39,20 @@ export default function Home() {
     { name: "WhatsApp", checked: false },
   ]);
 
+  // Estado de loading e notificações
+  const [isLoading, setIsLoading] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+
+  // Função para exibir notificações
+  const showNotification = useCallback((type, message) => {
+    setNotification({ type, message });
+  }, []);
+
+  // Handlers para metas
   const handleAddMeta = useCallback(() => {
     setMetas((prev) => [...prev, ""]);
   }, []);
-
   const handleChangeMeta = useCallback((value, index) => {
     setMetas((prev) => {
       const updated = [...prev];
@@ -45,15 +60,14 @@ export default function Home() {
       return updated;
     });
   }, []);
-
   const handleRemoveMeta = useCallback((index) => {
     setMetas((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  // Handlers para valores
   const handleAddValor = useCallback(() => {
     setValores((prev) => [...prev, { placeholder: "", value: "" }]);
   }, []);
-
   const handleChangeValor = useCallback((index, newValue) => {
     setValores((prev) => {
       const updated = [...prev];
@@ -61,26 +75,20 @@ export default function Home() {
       return updated;
     });
   }, []);
-
   const handleRemoveValor = useCallback((index) => {
     setValores((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
+  // Handler para canais de comunicação
   const handleToggleChannel = useCallback((index) => {
-    setChannels((prev) => {
-      const updated = [...prev];
-      updated[index].checked = !updated[index].checked;
-      return updated;
-    });
+    setChannels((prev) =>
+      prev.map((channel, i) =>
+        i === index ? { ...channel, checked: !channel.checked } : channel
+      )
+    );
   }, []);
 
-  const [notification, setNotification] = useState(null);
-  const [isSubmitted, setIsSubmitted] = useState(false);
-
-  const showNotification = useCallback((type, message) => {
-    setNotification({ type, message });
-  }, []);
-
+  // Handler para inputs genéricos
   const handleInputChange = useCallback(
     (e) => {
       const { name, value, type, checked } = e.target;
@@ -95,8 +103,8 @@ export default function Home() {
     [errors]
   );
 
+  // Handler para enviar o formulário
   const handleSubmit = useCallback(async () => {
-    // Validação do nome da empresa
     if (!formData.companyName || formData.companyName.trim() === "") {
       showNotification("error", "O nome da empresa é obrigatório.");
       setErrors((prev) => ({
@@ -106,37 +114,32 @@ export default function Home() {
       setCurrentStep(1);
       return;
     }
-
-    // Monta o payload com todos os dados necessários
     const payload = {
       ...formData,
       metas,
       valores,
       channels: channels.filter((ch) => ch.checked).map((ch) => ch.name),
     };
-
     try {
-      // Chama o endpoint que processa e envia o e-mail
+      setIsLoading(true);
       const response = await fetch("/api/send-email", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-
-      // Se a resposta não for OK, exibe o erro retornado
       if (!response.ok) {
         const errorData = await response.json();
         showNotification("error", errorData.message || "Erro ao enviar o formulário");
         return;
       }
-
-      // Se tudo ocorrer bem, mostra a tela de agradecimento e notifica o sucesso
       setIsSubmitted(true);
       showNotification("success", "Formulário enviado com sucesso!");
       console.log("Payload enviado:", payload);
     } catch (error) {
       console.error(error);
       showNotification("error", "Erro ao enviar o formulário");
+    } finally {
+      setIsLoading(false);
     }
   }, [formData, metas, valores, channels, showNotification]);
 
@@ -151,7 +154,6 @@ export default function Home() {
         return;
       }
     }
-
     if (currentStep < stepsTotal) {
       setCurrentStep((prev) => prev + 1);
     } else {
@@ -160,21 +162,28 @@ export default function Home() {
   }, [currentStep, stepsTotal, formData, handleSubmit, showNotification]);
 
   const handlePrevStep = useCallback(() => {
-    if (currentStep > 1) {
+    if (!showWelcome && currentStep === 1) {
+      // Se estiver no primeiro step do formulário e não estiver na tela de welcome, retorna para a tela de boas-vindas
+      setShowWelcome(true);
+    } else if (currentStep > 1) {
       setCurrentStep((prev) => prev - 1);
     }
-  }, [currentStep]);
+  }, [currentStep, showWelcome]);
 
+  // Foco automático no primeiro campo de cada step
   const stepContentRef = useRef(null);
   useEffect(() => {
     if (stepContentRef.current) {
-      const firstInteractive = stepContentRef.current.querySelector("input, select, textarea, button");
+      const firstInteractive = stepContentRef.current.querySelector(
+        "input, select, textarea, button"
+      );
       if (firstInteractive) {
         firstInteractive.focus();
       }
     }
   }, [currentStep]);
 
+  // Configuração do swipe para navegação entre steps
   const swipeHandlers = useSwipeable({
     onSwipedLeft: () => handleNextStep(),
     onSwipedRight: () => handlePrevStep(),
@@ -182,6 +191,7 @@ export default function Home() {
     trackMouse: true,
   });
 
+  // Render do conteúdo do step atual (para o formulário)
   const renderStepContent = useMemo(() => {
     switch (currentStep) {
       case 1:
@@ -239,22 +249,143 @@ export default function Home() {
     handleToggleChannel,
   ]);
 
-  if (isSubmitted) {
-    return <ThankYouScreen />;
-  }
+  /**
+   * Render condicional do conteúdo à direita (Welcome, Formulário ou Thank You),
+   * usando a mesma estrutura de “caixa” para manter os botões no mesmo lugar.
+   */
+  const renderContent = useMemo(() => {
+    // 1) WelcomeScreen
+    if (showWelcome && !isSubmitted) {
+      return (
+        <div className="w-full h-full flex flex-col justify-between px-2 md:px-8 py-4 md:py-6">
+          {/* Conteúdo centralizado */}
+          <div className="flex-1 flex items-center justify-center">
+            <WelcomeScreen />
+          </div>
 
+          {/* Barra de botões */}
+          <div className="flex items-center justify-between mt-4 md:mt-8">
+            <div /> {/* Espaço para alinhamento */}
+            <button
+              type="button"
+              onClick={() => setShowWelcome(false)}
+              className="bg-green-500 text-white py-3 px-6 text-lg font-medium rounded-md shadow-md transition duration-300 ease-in-out hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 cursor-pointer"
+            >
+              Iniciar Briefing
+            </button>
+          </div>
+        </div>
+      );
+    }
+    // 2) ThankYouScreen
+    else if (isSubmitted) {
+      return (
+        <div className="w-full h-full flex flex-col justify-between px-2 md:px-8 py-4 md:py-6">
+          {/* Conteúdo centralizado */}
+          <div className="flex-1 flex items-center justify-center">
+            <ThankYouScreen />
+          </div>
+
+          {/* Barra de botões */}
+          <div className="flex items-center justify-between mt-4 md:mt-8">
+            <div />
+            <button
+              type="button"
+              onClick={() => {
+                console.log("Fechando ou redirecionando...");
+              }}
+              className="bg-green-500 text-white py-3 px-6 text-lg font-medium rounded-md shadow-md transition duration-300 ease-in-out hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 cursor-pointer"
+            >
+              Fechar
+            </button>
+          </div>
+        </div>
+      );
+    }
+    // 3) Formulário (Steps)
+    else {
+      return (
+        <form className="w-full h-full flex flex-col justify-between px-2 md:px-8 py-4 md:py-6">
+          {/* Indicadores de etapa */}
+          <div className="flex items-center gap-2 mb-4">
+            {Array.from({ length: stepsTotal }).map((_, idx) => (
+              <div
+                key={idx}
+                className={`w-3 h-3 rounded-full ${
+                  idx + 1 === currentStep ? "bg-green-800" : "bg-gray-300"
+                }`}
+              ></div>
+            ))}
+          </div>
+
+          {/* Área do conteúdo do Step */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              ref={stepContentRef}
+              key={currentStep}
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -50 }}
+              transition={{ type: "spring", stiffness: 100, damping: 20 }}
+              className="flex-1 overflow-y-auto pr-1 pb-2 -mr-1"
+              style={{ maxHeight: "calc(70vh - 120px)" }}
+              {...swipeHandlers}
+            >
+              {renderStepContent}
+            </motion.div>
+          </AnimatePresence>
+
+          {/* Barra de botões (Back, Continue/Submit) */}
+          <div className="flex items-center justify-between mt-4 md:mt-8">
+            <button
+              type="button"
+              onClick={handlePrevStep}
+              className="border border-green-500 bg-transparent text-green-500 py-3 px-6 text-lg font-medium rounded-md shadow-sm transition duration-300 ease-in-out hover:bg-green-50 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 cursor-pointer"
+              disabled={isLoading}
+              aria-label="Voltar"
+            >
+              Back
+            </button>
+            <div className="flex gap-2 md:gap-4">
+              {isLoading ? (
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-6 w-6 border-t-2 border-b-2 border-green-500 mr-2" />
+                  <span className="text-green-600">Enviando...</span>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleNextStep}
+                  className="bg-green-500 text-white py-3 px-6 text-lg font-medium rounded-md shadow-md transition duration-300 ease-in-out hover:bg-green-600 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-75 cursor-pointer"
+                  aria-label={currentStep === stepsTotal ? "Enviar" : "Continuar"}
+                >
+                  {currentStep === stepsTotal ? "Submit" : "Continue"}
+                </button>
+              )}
+            </div>
+          </div>
+        </form>
+      );
+    }
+  }, [
+    showWelcome,
+    isSubmitted,
+    currentStep,
+    stepsTotal,
+    isLoading,
+    renderStepContent,
+    swipeHandlers,
+  ]);
+
+  // Layout principal com banner à esquerda e conteúdo (Welcome, Formulário ou ThankYou)
   return (
     <>
-      {notification && (
-        <Toast notification={notification} onClose={() => setNotification(null)} />
-      )}
-
-      {/* Main animado */}
+      {notification && <Toast notification={notification} onClose={() => setNotification(null)} />}
       <motion.main
         initial={{ opacity: 0 }}
         animate={{ opacity: 0.97 }}
         transition={{ duration: 1, delay: 1.5 }}
-        className="w-full max-w-6xl mx-auto flex flex-col md:flex-row bg-white shadow-xl rounded-2xl overflow-hidden transition-all duration-300 p-4 my-4"
+        className="w-full max-w-5xl mx-auto flex flex-col md:flex-row bg-white shadow-xl rounded-2xl overflow-hidden transition-all duration-300 p-4 my-4"
         style={{
           minHeight: "80vh",
           maxHeight: "90vh",
@@ -267,7 +398,7 @@ export default function Home() {
           initial={{ y: 50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.8, delay: 2.5 }}
-          className="relative justify-center flex md:w-[100%] h-40 md:h-full mb-6 md:mb-0 responsivity_image"
+          className="relative justify-center flex md:w-[45%] h-40 md:h-full mb-6 md:mb-0 responsivity_image"
           style={{
             background: "url(/images/banner.svg)",
             backgroundSize: "cover",
@@ -276,7 +407,6 @@ export default function Home() {
             borderRadius: "14px",
           }}
         >
-          {/* LetterLogo com animação subsequente */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -291,102 +421,15 @@ export default function Home() {
           ></motion.div>
         </motion.div>
 
-        {/* Formulário com animação slide da esquerda pra direita */}
+        {/* Área de Conteúdo (WelcomeScreen, Formulário ou ThankYouScreen) */}
         <motion.div
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.5, delay: 3.6 }}
-          className="w-full md:w-[55%] flex justify-start overflow-hidden"
+          className="w-full md:w-[55%] flex justify-start overflow-hidden items-center"
+          style={{ padding: "0 1rem" }}
         >
-          <form className="w-full h-full flex flex-col justify-between px-2 md:px-8 py-4 md:py-6">
-            {/* Indicadores de etapa */}
-            <div className="flex items-center gap-2 mb-4">
-              {Array.from({ length: stepsTotal }).map((_, idx) => (
-                <div
-                  key={idx}
-                  className={`w-3 h-3 rounded-full ${
-                    idx + 1 === currentStep ? "bg-green-800" : "bg-gray-300"
-                  }`}
-                ></div>
-              ))}
-            </div>
-
-            <AnimatePresence mode="wait">
-              <motion.div
-                ref={stepContentRef}
-                key={currentStep}
-                initial={{ opacity: 0, x: 50 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -50 }}
-                transition={{ type: "spring", stiffness: 100, damping: 20 }}
-                className="flex-1 overflow-y-auto pr-1 pb-2 -mr-1"
-                style={{ maxHeight: "calc(70vh - 120px)" }}
-                {...swipeHandlers}
-              >
-                {renderStepContent}
-              </motion.div>
-            </AnimatePresence>
-
-            <div className="flex items-center justify-between mt-4 md:mt-8">
-              <button
-                type="button"
-                onClick={handlePrevStep}
-                className="
-                  border 
-                  border-green-500 
-                  bg-transparent 
-                  text-green-500 
-                  py-3 
-                  px-6 
-                  text-lg 
-                  font-medium 
-                  rounded-md 
-                  shadow-sm 
-                  transition 
-                  duration-300 
-                  ease-in-out 
-                  hover:bg-green-50 
-                  focus:outline-none 
-                  focus:ring-2 
-                  focus:ring-green-400 
-                  focus:ring-opacity-75
-                  cursor-pointer
-                "
-                disabled={currentStep === 1}
-                aria-label="Voltar"
-              >
-                Back
-              </button>
-              <div className="flex gap-2 md:gap-4">
-                <button
-                  type="button"
-                  onClick={handleNextStep}
-                  className="
-                    bg-green-500 
-                    text-white 
-                    py-3 
-                    px-6 
-                    text-lg 
-                    font-medium 
-                    rounded-md 
-                    shadow-md 
-                    transition 
-                    duration-300 
-                    ease-in-out 
-                    hover:bg-green-600 
-                    focus:outline-none 
-                    focus:ring-2 
-                    focus:ring-green-400 
-                    focus:ring-opacity-75
-                    cursor-pointer
-                  "
-                  aria-label={currentStep === stepsTotal ? "Enviar" : "Continuar"}
-                >
-                  {currentStep === stepsTotal ? "Submit" : "Continue"}
-                </button>
-              </div>
-            </div>
-          </form>
+          {renderContent}
         </motion.div>
       </motion.main>
     </>

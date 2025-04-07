@@ -80,3 +80,53 @@ body {
   font-family: Arial, Helvetica, sans-serif;
   overflow-y: hidden;
 }
+@keyframes borderExpand {
+  0% {
+    /* Começa “zerado” no canto superior esquerdo */
+    clip-path: polygon(0% 0%, 0% 0%, 0% 0%, 0% 0%);
+    border-width: 5px;
+  }
+  25% {
+    /* Expande para a borda superior */
+    clip-path: polygon(0% 0%, 100% 0%, 100% 0%, 0% 0%);
+    border-width: 5px;
+  }
+  50% {
+    /* Desce até a borda inferior */
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    border-width: 5px;
+  }
+  100% {
+    /* Mantém o retângulo cheio, mas afina a borda */
+    clip-path: polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%);
+    border-width: 0.1px; /* Volta à espessura original */
+  }
+}
+
+input {
+  position: relative;
+  border: 1px solid #ccc;     /* Borda padrão */
+  border-radius: 4px;         /* Ajuste conforme quiser */
+  transition: border-color 1s ease;
+}
+
+input:focus {
+  outline: none;
+  border-color: transparent;  /* Some com a borda padrão ao focar */
+}
+
+/* Pseudo-elemento que fará a animação */
+input:focus::after {
+  content: "";
+  position: relative;
+  border: 1px solid #10B981;  /* Verde mais grossa no início */
+  border-radius: 4px;         /* Mesmo raio do input */
+  pointer-events: none;
+  
+  /* Animação com clip-path */
+  animation: borderExpand 1.5s forwards ease;
+  /* No fim da animação, a borda fica com 1px de espessura */
+  
+  /* Começa “zerada” */
+  clip-path: polygon(0% 0%, 0% 0%, 0% 0%, 0% 0%);
+}

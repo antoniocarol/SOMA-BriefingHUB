@@ -10,7 +10,7 @@ export default function Step7({ formData, handleInputChange }) {
   ];
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pl-1">
       <h2 className="text-xl font-semibold text-gray-800">Escala de Características da Marca</h2>
       <div className="overflow-x-auto">
         <table className="min-w-full border border-gray-300 text-gray-800">
